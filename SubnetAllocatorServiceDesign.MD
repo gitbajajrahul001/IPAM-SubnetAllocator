@@ -1,4 +1,4 @@
-# Concrete, Auditable IPAM Setup
+# Concrete, Auditable IPAM Setup - Conceptual Walkthrough with an Example
 
 ## Supernet (single site)
 
