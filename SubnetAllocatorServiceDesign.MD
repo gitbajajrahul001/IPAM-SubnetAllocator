@@ -18,8 +18,6 @@ Let’s say IPAM currently has:
 - 10.20.1.64/27  
 - 10.20.3.0/24  
 
-These are facts, not assumptions.
-
 ---
 
 ## Step 1: Convert everything into address ranges
@@ -45,7 +43,7 @@ No CIDR logic yet — just raw gaps.
 
 ---
 
-## Step 3: Re-CIDR the free ranges (this is the missing step)
+## Step 3: Re-CIDR the free ranges
 
 Now we convert each gap into the largest possible aligned CIDR blocks.
 
@@ -76,7 +74,7 @@ So:
 
 ---
 
-## Step 4: Coalesce adjacent free blocks (important)
+## Step 4: Coalesce adjacent free blocks
 
 Now check adjacency + alignment:
 
