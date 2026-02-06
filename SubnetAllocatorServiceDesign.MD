@@ -241,4 +241,109 @@ Ranking principles:
 
 You now know **which block is safest to touch**  before making any allocation decision.
 
+---
+
+# Next Step: Select the Exact Child CIDR from the Chosen Free Block
+
+At this point:
+
+- The free-block map is built  
+- Blocks are scored  
+- One parent free block is selected as the safest  
+
+Still **no allocation is committed**.
+
+Now we decide **which exact subnet inside the chosen block** would be used.
+
+---
+
+## Given
+
+**Chosen free block:**  
+10.20.1.128/25
+
+**Requested subnet size:**  
+/27
+
+---
+
+## Step 1: Subdivide the parent block
+
+A `/25` subdivides cleanly into **4 × /27** blocks:
+
+- 10.20.1.128/27  
+- 10.20.1.160/27  
+- 10.20.1.192/27  
+- 10.20.1.224/27  
+
+These are all mathematically valid children.
+
+---
+
+## Step 2: Apply the edge-only rule
+
+You may choose **only edge subnets**.
+
+Valid choices:
+
+- **Low edge:**  
+  10.20.1.128/27  
+
+- **High edge:**  
+  10.20.1.224/27  
+
+Invalid choices (never select):
+
+- 10.20.1.160/27  
+- 10.20.1.192/27  
+
+Middle allocation is forbidden.
+
+---
+
+## Step 3: Pick one edge consistently
+
+Define a policy **once** and never change it:
+
+- Always lowest-address  
+**or**
+- Always highest-address  
+
+Example (lowest-address policy):
+
+Chosen child CIDR:  
+10.20.1.128/27
+
+---
+
+## Why this step exists (important)
+ 
+Allocating from the middle creates fragmentation: [ free ][ allocated ][ free ]
+
+
+This produces **two fragments**, both smaller and harder to reuse.
+
+Edge allocation produces: [ allocated ][ free ]
+
+
+Effects:
+
+- Single remaining fragment
+- Future merges remain possible
+- Fragmentation is predictable and controlled
+- Long-term IPAM health is preserved
+
+---
+
+## Result of this step
+
+- Exact child CIDR is **selected**
+- Nothing is written to SolarWinds
+- No allocation is committed
+
+The next step after this is **atomic commit + conflict handling**.
+
+
+
+
 
