@@ -343,6 +343,136 @@ Effects:
 
 The next step after this is **atomic commit + conflict handling**.
 
+# Next Step: Atomic Commit with Optimistic Locking
+
+At this point you already have:
+
+- Site  
+- Requested prefix  
+- Chosen parent free block  
+- Exact child CIDR to allocate  
+
+Now you must **safely commit** the allocation into SolarWinds.
+
+SolarWinds provides **no native locking**, so correctness must be enforced by the allocator.
+
+---
+
+## What you do (strict order)
+
+---
+
+## 1️⃣ Re-read authoritative state
+
+Immediately before creation:
+
+- Re-fetch **all allocated subnets** for the site from SolarWinds
+- Recompute the **free-block map**
+- Re-validate that the **chosen child CIDR is still free**
+
+Decision:
+
+- If the CIDR is still free → continue  
+- If the CIDR is no longer free → **abort and restart from the scoring step**
+
+No partial progress is kept.
+
+This is the optimistic-lock boundary.
+
+---
+
+## 2️⃣ Create subnet in SolarWinds
+
+Call the SolarWinds IPAM API to:
+
+- Create the subnet
+- Associate it with the correct site
+- Store metadata:
+  - Request ID
+  - Timestamp
+  - Requester
+
+This API call is the **commit point**.
+
+If this call succeeds, the allocator assumes ownership.
+
+---
+
+## 3️⃣ Verify creation
+
+Immediately after creation:
+
+- Confirm the subnet exists
+- Confirm the CIDR matches **exactly**
+- Confirm **no overlap** was introduced
+
+Verification is mandatory.
+
+If **any check fails**:
+
+- Treat the operation as failed
+- Abort
+- Retry from Step 1
+
+Never assume success based on API response alone.
+
+---
+
+## 4️⃣ Bounded retry logic
+
+Retry the entire sequence only **N times** (for example, `N = 3`):
+
+- Re-read
+- Re-score
+- Re-select
+- Re-commit
+
+If all retries fail:
+
+- Exit cleanly
+- Return error: **“capacity contention”**
+
+This prevents:
+
+- Infinite retry loops
+- Race-condition storms
+- Cascading failures under load
+
+---
+
+## Why this step matters
+
+SolarWinds IPAM has:
+
+- No locking
+- No reservation semantics
+- No transactional guarantees
+
+So **your allocator becomes the lock**.
+
+This exact pattern is used in:
+
+- Cloud IPAM systems
+- Distributed schedulers
+- Storage allocators
+
+Anywhere shared state exists without native concurrency control.
+
+---
+
+## Where you are now (checkpoint)
+
+You have designed:
+
+- A fragmentation-aware allocator  
+- Safe deletion and reuse  
+- Concurrency control  
+- Deterministic behavior  
+
+At this point, you are no longer **calling IPAM APIs**.
+
+You are **building IPAM logic**.
+
 
 
 
