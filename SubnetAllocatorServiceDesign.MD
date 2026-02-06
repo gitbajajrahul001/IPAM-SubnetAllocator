@@ -92,3 +92,153 @@ So no merge here.
 - 10.20.1.128/25  
 - 10.20.2.0/24  
 ```
+---
+# Next Step: Score Eligible Free Blocks for the Requested Subnet Size
+
+At this stage, we **do not allocate anything**.  
+We only decide **which free block is safest to touch**.
+
+Input data is the **final free block map**, unchanged.
+
+---
+
+## Clean free-block map (input)
+
+- 10.20.0.0/24  
+- 10.20.1.96/27  
+- 10.20.1.128/25  
+- 10.20.2.0/24  
+
+---
+
+## Incoming request
+
+**Requested subnet size:** `/27`
+
+---
+
+## Step 1: Filter eligible free blocks
+
+Rule: block.prefix ≤ requested_prefix
+
+
+Meaning: the block must be **same size or larger** than the requested subnet.
+
+| Free block        | Prefix | Eligible for /27 |
+|-------------------|--------|------------------|
+| 10.20.0.0/24      | /24    | Yes              |
+| 10.20.1.96/27     | /27    | Yes              |
+| 10.20.1.128/25    | /25    | Yes              |
+| 10.20.2.0/24      | /24    | Yes              |
+
+All blocks are technically eligible.
+
+---
+
+## Step 2: Calculate fragmentation cost per block
+
+We now score **impact**, not availability.
+
+---
+
+### Block A  
+**10.20.1.96/27**
+
+- Exact size match
+- Remaining space after carve: **none**
+- No fragmentation introduced
+- No effect on future allocations
+
+**Fragmentation cost:**  
+Very low
+
+**Reusability impact:**  
+None
+
+**Strategic value destroyed:**  
+None
+
+---
+
+### Block B  
+**10.20.1.128/25**
+
+- /25 carved into one /27
+- Remaining space: `/27` + `/26`
+- Still cleanly aligned
+- Still reusable for multiple sizes
+
+**Fragmentation cost:**  
+Low
+
+**Reusability impact:**  
+Minimal
+
+**Strategic value destroyed:**  
+Moderate (breaks a /25)
+
+---
+
+### Block C  
+**10.20.0.0/24**
+
+- /24 carved into one /27
+- Remaining space: multiple fragments
+- Destroys a full /24 option
+- Reduces ability to place future /24 or larger workloads
+
+**Fragmentation cost:**  
+High
+
+**Reusability impact:**  
+Medium
+
+**Strategic value destroyed:**  
+High
+
+---
+
+### Block D  
+**10.20.2.0/24**
+
+- Same characteristics as Block C
+- One of the largest remaining blocks in the site
+- Critical for future scale
+
+**Fragmentation cost:**  
+Very high
+
+**Reusability impact:**  
+High
+
+**Strategic value destroyed:**  
+Very high
+
+---
+
+## Step 3: Rank blocks (best-fit + future safety)
+
+Ranking principles:
+
+- Prefer the **smallest block that fits**
+- Penalize use of **/24 or larger blocks**
+- Preserve **future growth options**
+
+| Rank | Block           | Reason |
+|-----:|-----------------|--------|
+| 1    | 10.20.1.96/27   | Exact fit, zero fragmentation |
+| 2    | 10.20.1.128/25  | Acceptable, controlled impact |
+| 3    | 10.20.0.0/24    | Avoid unless necessary |
+| 4    | 10.20.2.0/24    | Do not touch if possible |
+
+---
+
+## Result of this step
+
+- **No IP allocated**
+- **No subnet carved**
+- A **preferred block order** is established
+
+You now know **which block is safest to touch**  before making any allocation decision.
+
+
