@@ -91,8 +91,7 @@ So no merge here.
 - 10.20.1.96/27  
 - 10.20.1.128/25  
 - 10.20.2.0/24  
-```
----
+
 # Next Step: Score Eligible Free Blocks for the Requested Subnet Size
 
 At this stage, we **do not allocate anything**.  
